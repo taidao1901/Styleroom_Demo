@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  styleroom_frontend:
+    build: .
+    container_name: styleroom_frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
