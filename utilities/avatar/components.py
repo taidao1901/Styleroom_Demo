@@ -2,7 +2,6 @@ import asyncio
 import streamlit as st
 from dotenv import load_dotenv
 from gql import gql, Client
-# from gql.transport.exceptions import TransportQueryError
 from gql.transport.aiohttp import AIOHTTPTransport
 import os
 import pandas as pd
@@ -113,6 +112,7 @@ def create_avatar():
                                 #update avatar state
                                 avatar_id, pose_id, _ = parse_gcp_url(glb_path, type = "avatar")
                                 update_response = asyncio.run(update_avatar_status_func(avatar_id, pose_id, "glbUploaded"))
+                                print(update_response)
                                 try:
                                     if update_response["updateAvatarState"]["status"]==200:
                                         st.success("Create avatar successfully")
