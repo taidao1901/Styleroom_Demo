@@ -6,7 +6,7 @@ from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 import os
 import pandas as pd
-from utilities.common import upload_file_signed_url
+from utilities.common import upload_file_signed_url, parse_gcp_url
 load_dotenv()
 
 async def list_avatar_func():
@@ -31,7 +31,7 @@ async def list_avatar_func():
             return result
     except Exception as e:
         return e
-async def create_avatar_func(name,pose_id):
+async def create_avatar_func(name: str,pose_id: int):
     try:
         transport = AIOHTTPTransport(url=os.environ.get("STYLEROOM_URL"))
         async with Client(
@@ -49,11 +49,34 @@ async def create_avatar_func(name,pose_id):
                 }
                 }
             """)
-            query = query.replace("#name#",name)
-            query = query.replace("#poseid#",pose_id)
+            query = query.replace("#name#",str(name))
+            query = query.replace("#poseid#",str(pose_id))
             query = gql(query)       
             result = await session.execute(query)
             return result
+    except Exception as e:
+        return e
+async def update_avatar_status_func(avatar_id: int, pose_id: int, state:str):
+    try:
+        transport = AIOHTTPTransport(url=os.environ.get("STYLEROOM_URL"))
+        async with Client(
+            transport=transport, fetch_schema_from_transport=True,
+        ) as session:
+            query = ("""
+                mutation {
+                    updateAvatarState(
+                        input: { avatarId: #avatar_id#, poseId: #pose_id#, state: #state# }
+                    ) {
+                        status
+                    }
+                }
+            """)
+            query = query.replace("#avatar_id#",str(avatar_id))
+            query = query.replace("#pose_id#",str(pose_id))
+            query = query.replace("#state#",str(state))
+            query = gql(query)       
+            result = await session.execute(query)
+            return result            
     except Exception as e:
         return e
 def create_avatar():
@@ -79,18 +102,28 @@ def create_avatar():
                     response = response["createAvatar"]
                     if response["status"] == 201:
                         signed_url = response["signedUrl"]
-                        st.write("glbPath: ",response["glbPath"])
+                        glb_path = response["glbPath"]
+                        st.write("glbPath: ",glb_path)
+                        #upload glb file 
                         error, response = asyncio.run(upload_file_signed_url(file,signed_url))
                         if error is not None:
                             raise Exception(error)
                         else:
                             if response.status_code ==200:
-                                st.success("Create avatar successfully")
+                                #update avatar state
+                                avatar_id, pose_id, _ = parse_gcp_url(glb_path, type = "avatar")
+                                update_response = asyncio.run(update_avatar_status_func(avatar_id, pose_id, "glbUploaded"))
+                                try:
+                                    if update_response["updateAvatarState"]["status"]==200:
+                                        st.success("Create avatar successfully")
+                                    else:
+                                        raise Exception(f"Error update avatar state: {update_response}")
+                                except:
+                                    raise Exception(f"Error update avatar state: {update_response}")
                             else:
-                                raise Exception(error)
+                                raise Exception(f"Can't upload glb file: {response.text}")
                             
                 except Exception as error:
-                    print("lol")
                     try:
                         error = str(response.errors[0])
                     except:

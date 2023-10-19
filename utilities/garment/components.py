@@ -5,7 +5,7 @@ from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 import os
 import pandas as pd
-from utilities.common import upload_file_signed_url
+from utilities.common import upload_file_signed_url, parse_gcp_url
 load_dotenv()
 
 async def list_garment_func():
@@ -29,7 +29,7 @@ async def list_garment_func():
             return result
     except Exception as e:
         return e
-async def create_garment_func(pose_id, avatar_id, type, sbox_post_id):
+async def create_garment_func(pose_id:int, avatar_id:int, type:str, sbox_post_id:int):
     try:
         transport = AIOHTTPTransport(url=os.environ.get("STYLEROOM_URL"))
         async with Client(
@@ -54,6 +54,30 @@ async def create_garment_func(pose_id, avatar_id, type, sbox_post_id):
             query = gql(query)       
             result = await session.execute(query)
             return result
+    except Exception as e:
+        return e
+async def update_garment_state_func(garment_id: int, avatar_id: int, pose_id: int, state:str):
+    try:
+        transport = AIOHTTPTransport(url=os.environ.get("STYLEROOM_URL"))
+        async with Client(
+            transport=transport, fetch_schema_from_transport=True,
+        ) as session:
+            query = ("""
+                mutation {
+                    updateGarmentState(
+                        input: { garmentId: #garment_id#, avatarId: #avatar_id#, poseId: #pose_id#, state: #state# }
+                    ) {
+                        status
+                    }
+                }
+            """)
+            query = query.replace("#garment_id#",str(garment_id))
+            query = query.replace("#avatar_id#",str(avatar_id))
+            query = query.replace("#pose_id#",str(pose_id))
+            query = query.replace("#state#",str(state))
+            query = gql(query)       
+            result = await session.execute(query)
+            return result            
     except Exception as e:
         return e
 def create_garment():
@@ -87,13 +111,24 @@ def create_garment():
                     response = response["createGarment"]
                     if response["status"] == 201:
                         signed_url = response["signedUrl"]
+                        glb_path = response["glbPath"]
                         st.write("glbPath: ",response["glbPath"])
                         error, response = asyncio.run(upload_file_signed_url(file,signed_url))
                         if error is not None:
                             raise Exception(f"Error upload file: {error}")
                         else:
                             if response.status_code ==200:
-                                st.success("Create garment successfully")
+                                #update garment state
+                                avatar_id, pose_id, garment_id = parse_gcp_url(glb_path, type = "garment")
+                                update_response = asyncio.run(update_garment_state_func(garment_id, avatar_id, pose_id, "glbUploaded"))
+                                try:
+                                    if update_response["updateGarmentState"]["status"]==200:
+                                        print(update_response)
+                                        st.success("Create garment successfully")
+                                    else:
+                                        raise Exception(f"Error update garment state: {update_response}")
+                                except:
+                                    raise Exception(f"Error update garment state: {update_response}")
                             else:
                                 raise Exception(f"Error upload file: {response.text}")
                             
