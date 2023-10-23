@@ -137,11 +137,11 @@ def list_avatars():
     try:
         avatar = asyncio.run(list_avatar_func())["avatars"]
         avatar = pd.DataFrame(avatar)
-        if avatar.empty:
-            st.write("No avatars found")
-            return None
-        avatar['createdAt'] = pd.to_datetime(avatar['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
-        avatar['updatedAt'] = pd.to_datetime(avatar['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        try:
+            avatar['createdAt'] = pd.to_datetime(avatar['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
+            avatar['updatedAt'] = pd.to_datetime(avatar['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        except:
+            pass
         st.dataframe(avatar,hide_index=True)
     except Exception as e:
         st.write("Error fetching avatar: ",e)

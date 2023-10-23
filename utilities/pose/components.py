@@ -54,8 +54,11 @@ def list_poses():
         
         poses = asyncio.run(list_poses_func())["poses"]
         poses = pd.DataFrame(poses)
-        poses['createdAt'] = pd.to_datetime(poses['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
-        poses['updatedAt'] = pd.to_datetime(poses['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        try:
+            poses['createdAt'] = pd.to_datetime(poses['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
+            poses['updatedAt'] = pd.to_datetime(poses['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        except:
+            pass
         st.dataframe(poses,hide_index=True)
     except Exception as e:
         st.write("Error fetching poses", e)

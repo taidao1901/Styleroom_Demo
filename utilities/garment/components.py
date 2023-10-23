@@ -146,11 +146,11 @@ def list_garments():
     try:
         garment = asyncio.run(list_garment_func())["garments"]
         garment = pd.DataFrame(garment)
-        if garment.empty:
-            st.write("No garments found")
-            return None
-        garment['createdAt'] = pd.to_datetime(garment['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
-        garment['updatedAt'] = pd.to_datetime(garment['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        try:
+            garment['createdAt'] = pd.to_datetime(garment['createdAt'],format='%Y-%m-%dT%H:%M:%S.%fZ')
+            garment['updatedAt'] = pd.to_datetime(garment['updatedAt'], format='%Y-%m-%dT%H:%M:%S.%fZ')
+        except:
+            pass
         st.dataframe(garment,hide_index=True)
     except Exception as e:
         st.write("Error fetching garment: ",e)
