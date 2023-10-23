@@ -77,10 +77,13 @@ def create_pose():
                 #check exist
                 pose_existed =  asyncio.run(list_poses_func())["poses"]
                 pose_existed = pd.DataFrame(pose_existed)
-                check_existed = pose_existed['name'].isin([name]).any()
-                if check_existed:
-                    st.error("Pose already existed")
-                    return None
+                try:
+                    check_existed = pose_existed['name'].isin([name]).any()
+                    if check_existed:
+                        st.error("Pose already existed")
+                        return None
+                except:
+                    pass
                 response = asyncio.run(create_pose_func(name))["createPose"]
                 if response['status']== 201:
                     st.success("Pose created successfully")
