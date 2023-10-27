@@ -83,25 +83,21 @@ async def search_avatars(avatar_ids: List[int]):
     return await asyncio.gather(*avatars)
 
 def list_avatar():
-    try:
-        avatars = asyncio.run(list_avatar_func())["avatars"]
-        id_list = [avatar["id"] for avatar in avatars]
-        avatars = asyncio.run(search_avatars([0,1]))
-        result  = []
-        for avatar in avatars:
-            search_avatar = avatar["searchAvatars"][0]
-            if search_avatar["status"] == 200:
-                data = {
-                    "id": search_avatar["id"],
-                    "name": search_avatar["name"],
-                    "poses": search_avatar["poses"],
-                    "thumbnail": search_avatar["thumbnail"],
-                }
-                result.append(data)
-        st.session_state["fitting_avatars"] = result
-    except:
-        st.session_state["fitting_avatars"] = []
-        
+    avatars = asyncio.run(list_avatar_func())["avatars"]
+    id_list = [avatar["id"] for avatar in avatars]
+    avatars = asyncio.run(search_avatars([0,1]))
+    result  = []
+    for avatar in avatars:
+        search_avatar = avatar["searchAvatars"][0]
+        if search_avatar["status"] == 200:
+            data = {
+                "id": search_avatar["id"],
+                "name": search_avatar["name"],
+                "poses": search_avatar["poses"],
+                "thumbnail": search_avatar["thumbnail"],
+            }
+            result.append(data)
+    st.session_state["fitting_avatars"] = result
 def show_avatar():
     thumbnails = [avatar["thumbnail"] for avatar in st.session_state["fitting_avatars"]]
     image_names = [avatar["name"] for avatar in st.session_state["fitting_avatars"]]
@@ -115,6 +111,7 @@ def show_avatar():
         border_color="red",
         key="avatar",             
         )
+        
     index = st.session_state["fitting_avatar_selector"].click_detect()
     if index == -1:
         st.stop()
@@ -122,8 +119,10 @@ def show_avatar():
     # Reset avatar selected
     if "fitting_avatar_selected" not in st.session_state or st.session_state["fitting_avatar_selected"] != index:
         st.session_state["fitting_avatar_selected"] = index
-        del st.session_state["fitting_pose_selector"]
-        del st.session_state["fitting_pose_selected"]
+        if "fitting_pose_selector" in st.session_state:
+            del st.session_state["fitting_pose_selector"]
+        if "fitting_pose_selected" in st.session_state:
+            del st.session_state["fitting_pose_selected"]
     st.write(st.session_state["fitting_avatar_selected"])
 def show_pose():
     poses = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["poses"]
@@ -147,8 +146,6 @@ def show_pose():
         st.stop()
     if "fitting_pose_selected" not in st.session_state or st.session_state["fitting_pose_selected"] != index:
         st.session_state["fitting_pose_selected"] = index
-        del st.session_state["fitting_garment_selector"]
-        del st.session_state["fitting_garment_selected"]
     # reset garment selector
 def show_viewpoint():
     viewpoint = st.radio("Viewpoint", [0,45,90,135,180,225,270,315], index=0, horizontal=True)
@@ -181,8 +178,9 @@ def show_top():
         key="bar",
         )
     index = st.session_state["fitting_top_selector"].click_detect()
-    if index == -1 and "fitting_top_selected" in st.session_state:
-        del st.session_state["fitting_top_selected"]
+    if index == -1:
+        if "fitting_top_selected" in st.session_state:
+            del st.session_state["fitting_top_selected"]
     elif "fitting_top_selected" not in st.session_state or st.session_state["fitting_top_selected"] != index:
         st.session_state["fitting_top_selected"] = index
 def get_top_image():
@@ -221,8 +219,9 @@ def show_bottom():
         key="bottom",
         )
     index = st.session_state["fitting_bottom_selector"].click_detect()
-    if index == -1 and "fitting_bottom_selected" in st.session_state:
-        del st.session_state["fitting_bottom_selected"]
+    if index == -1:
+        if "fitting_bottom_selected" in st.session_state:
+            del st.session_state["fitting_bottom_selected"]
     elif "fitting_bottom_selected" not in st.session_state or st.session_state["fitting_bottom_selected"] != index:
         st.session_state["fitting_bottom_selected"] = index
 def get_bottom_image():

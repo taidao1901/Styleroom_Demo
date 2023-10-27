@@ -5,7 +5,7 @@ from PIL import Image
 IMAGE_ERROR = Image.open("./static/image_error.png")
 
 class ImageSelector():
-    def __init__(self, title, div_style, img_style, key, border_color, thumbnails=[], images=[], shawdows=[], image_names=[]):
+    def __init__(self, title, div_style, img_style, key, border_color="transparent", thumbnails=[], images=[], shawdows=[], image_names=[]):
         self.title = title
         self.thumbnails = thumbnails
         self.images = images
