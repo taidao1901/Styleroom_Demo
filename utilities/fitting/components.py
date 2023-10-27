@@ -85,7 +85,7 @@ async def search_avatars(avatar_ids: List[int]):
 def list_avatar():
     avatars = asyncio.run(list_avatar_func())["avatars"]
     id_list = [avatar["id"] for avatar in avatars]
-    avatars = asyncio.run(search_avatars([0,1]))
+    avatars = asyncio.run(search_avatars(id_list))
     result  = []
     for avatar in avatars:
         search_avatar = avatar["searchAvatars"][0]
