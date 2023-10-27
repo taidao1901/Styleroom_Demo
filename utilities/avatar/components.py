@@ -20,7 +20,7 @@ async def list_avatar_func():
                     id,
                     name,
                     userId,
-                    extendes,
+                    extends,
                     createdAt,
                     updatedAt
                 }

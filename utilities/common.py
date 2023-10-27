@@ -1,6 +1,11 @@
 import requests
 import asyncio
 from urllib.parse import urlparse
+import base64
+import os
+from PIL import Image
+import streamlit as st
+
 async def upload_file_signed_url(file, url:str, 
                                  headers:dict ={'Content-Type': 'application/octet-stream'}):
     try:
@@ -39,5 +44,21 @@ def parse_gcp_url(gcp_url: str, type: str ):
         raise Exception("Can't find garment_id")
      
     return avatar_id, pose_id, garment_id
-   
-    
+def paste_image(background, image, position= (0,0)):
+    image = image.convert("RGBA")
+    background.paste(image, position, mask=image)
+    return background
+@st.cache_data(ttl=3600)
+def read_image_as_base64(image_path:str):
+    extension = os.path.splitext(image_path)[1]
+    with open(image_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+    return f"data:image/{extension};base64,{encoded_string}"
+@st.cache_data(ttl=3600)
+def read_image_from_url(url:str):
+    try:
+        image = Image.open(requests.get(url, stream = True).raw)
+        return image
+    except Exception as e:
+        print(e)
+        return None
