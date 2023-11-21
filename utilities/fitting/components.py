@@ -9,6 +9,8 @@ from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 from utilities.fitting.clickable_image import ImageSelector
 from dotenv import load_dotenv
+import asyncio
+
 load_dotenv()
 
 def show_image(*args):
@@ -39,7 +41,7 @@ async def search_avatar_func(**kwargs):
         ) as session:
             query =("""
                 query{
-                    searchAvatars(input:{ #arg#}){
+                    searchAvatars(input:{ #kwargs#}){
                         status
                         id
                         name
@@ -71,7 +73,7 @@ async def search_avatar_func(**kwargs):
                     }
                 }
             """)
-            query = query.replace("#arg#",arg)
+            query = query.replace("#kwargs#",arg)
             query = gql(query)
             
             result = await session.execute(query)
@@ -81,6 +83,81 @@ async def search_avatar_func(**kwargs):
 async def search_avatars(avatar_ids: List[int]):
     avatars = [search_avatar_func(avatar_id=avatar_id) for avatar_id in avatar_ids]
     return await asyncio.gather(*avatars)
+async def search_garment_func(**kwargs):
+    is_activate = kwargs["is_activate"] if "is_activate" in kwargs else None
+    garment_id = kwargs["garment_id"] if "garment_id" in kwargs else None
+    avatar_id = kwargs["avatar_id"] if "avatar_id" in kwargs else None
+    pose_id = kwargs["pose_id"] if "pose_id" in kwargs else None
+    
+    arg = ""
+    arg += "isActive: "+str(is_activate).lower()+"," if is_activate != None else ""
+    arg += "garmentId: "+str(garment_id)+"," if garment_id != None else ""
+    arg += "avatarId: "+str(avatar_id)+"," if avatar_id != None else ""
+    arg += "poseId: "+str(pose_id)+"," if pose_id != None else ""
+    try:
+        transport = AIOHTTPTransport(url=os.environ.get("STYLEROOM_URL"))
+        async with Client(
+            transport=transport, fetch_schema_from_transport=True,
+        ) as session:
+            query = ("""
+                # Write your query or mutation here
+                query{
+                searchGarments(input: { #arg#}){
+                        status
+                        id
+                        type
+                        thumbnail
+                        sboxPostId
+                        objects{
+                            d0
+                            d45
+                            d90
+                            d135
+                            d180
+                            d225
+                            d270
+                            d315
+                        }
+                        shadows{
+                            d0
+                            d45
+                            d90
+                            d135
+                            d180
+                            d225
+                            d270
+                            d315
+                        }
+                        createdAt
+                        updatedAt
+                    }
+                }
+            """)
+            query = query.replace("#arg#",arg)
+            
+            query = gql(query)       
+            result = await session.execute(query)
+            return result
+    except Exception as e:
+        return e
+def search_garment(avatar_id: int, pose_id: int, is_activate: bool):
+    try: 
+        if "search_garment" not in st.session_state:
+            st.session_state["search_garment"] ={}
+        if f"{avatar_id}_{pose_id}" not in st.session_state["search_garment"]:
+            response = asyncio.run(search_garment(avatar_id, pose_id, is_activate=is_activate))
+            garments = response["searchGarments"]
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"] ={}
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["top"] = [garment for garment in garments if garment["type"] == "top"]
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["bottom"] = [garment for garment in garments if garment["type"] == "bottom"]
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["shoes"] = [garment for garment in garments if garment["type"] == "shoes"]
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["hair"] = [garment for garment in garments if garment["type"] == "hair"]
+            st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["accessories"] = [garment for garment in garments if garment["type"] == "accessories"]
+        
+    except Exception as e:
+        st.write(e)
+        return
+    
 
 def list_avatar():
     avatars = asyncio.run(list_avatar_func())["avatars"]
@@ -159,14 +236,15 @@ def get_avatar_image():
     avatar_image = common.read_image_from_url(avatar["objects"]["d"+str(viewpoint)])
     avatar_shadow = common.read_image_from_url(avatar["shadows"]["d"+str(viewpoint)])
     return avatar_image, avatar_shadow
-def show_top():
-    thumbnails = [
-        "https://storage.googleapis.com/asset-service/garment/garment_2/avatar_1/pose_3/rendered/0/processed/thumbnail.png",
-        "https://storage.googleapis.com/asset-service/garment/garment_3/avatar_1/pose_3/rendered/0/processed/thumbnail.png",
-        "https://storage.googleapis.com/asset-service/garment/garment_4/avatar_1/pose_3/rendered/0/processed/thumbnail.png"
-    ]
+    
+def show_top(avatar_id: int, pose_id: int):
+    if "search_garment" not in st.session_state and f"{avatar_id}_{pose_id}" not in st.session_state["search_garment"]:
+        search_garment(avatar_id, pose_id, is_activate=True)
+            
+    tops = st.session_state["search_garment"][f"{avatar_id}_{pose_id}"]["top"]  
+    thumbnails = [top["thumbnail"] for top in tops]
 
-    image_names = ["Ao1", "Ao2", "Ao3"]
+    image_names = []
     if "fitting_top_selector" not in st.session_state:
         st.session_state["fitting_top_selector"] = ImageSelector(
         title="Top",

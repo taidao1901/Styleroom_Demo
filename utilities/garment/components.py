@@ -80,6 +80,8 @@ async def update_garment_state_func(garment_id: int, avatar_id: int, pose_id: in
             return result            
     except Exception as e:
         return e
+
+
 def create_garment():
     with st.form("create_garment"):
         st.title("Create a new garment")
@@ -154,5 +156,6 @@ def list_garments():
         st.dataframe(garment,hide_index=True)
     except Exception as e:
         st.write("Error fetching garment: ",e)
+
 
     
