@@ -10,7 +10,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 from utilities.fitting.clickable_image import ImageSelector
 from dotenv import load_dotenv
 import asyncio
-
+import gc
 load_dotenv()
 
 def show_image(*args):
@@ -185,24 +185,19 @@ def show_avatar():
         div_style = {"display": "flex","flex-direction": "column","overflow-y": "scroll", "height": "450px", "width": "120px"},
         img_style = {"margin": "10px", "height": "100px", "border":"5px solid" },
         border_color="red",
-        key="avatar",             
+        key=f"avatar",             
         )
-        
     index = st.session_state["fitting_avatar_selector"].click_detect()
     if index == -1:
         st.stop()
     # Reset pose selector
     # Reset avatar selected
     if "fitting_avatar_selected" not in st.session_state or st.session_state["fitting_avatar_selected"] != index:
+        for key in st.session_state.keys():
+            if key.startswith("fitting_") and key not in ["fitting_avatars","fitting_avatar_selector"] :
+                del st.session_state[key]
         st.session_state["fitting_avatar_selected"] = index
-        if "fitting_pose_selector" in st.session_state:
-            del st.session_state["fitting_pose_selector"]
-        if "fitting_pose_selected" in st.session_state:
-            del st.session_state["fitting_pose_selected"]
-        if "fitting_top_selector" in st.session_state:
-            del st.session_state["fitting_top_selector"]
-        if "fitting_bottom_selector" in st.session_state:
-            del st.session_state["fitting_bottom_selector"]
+        
         
 def show_pose():
     poses = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["poses"]
@@ -218,36 +213,36 @@ def show_pose():
         div_style = {"display": "flex","flex-direction": "column","overflow-y": "scroll", "height": "450px", "width": "120px"},
         img_style = {"margin": "10px", "height": "100px", "border":"5px solid" },
         border_color="red",
-        key="pose",
+        key=f"pose_{st.session_state['fitting_avatar_selected']}",
         )
         
     index = st.session_state["fitting_pose_selector"].click_detect()
     if index == -1:
         st.stop()
     if "fitting_pose_selected" not in st.session_state or st.session_state["fitting_pose_selected"] != index:
+        
+        for key in st.session_state.keys():
+            if key.startswith("fitting_") and "avatar" not in key and key not in ["fitting_poses","fitting_pose_selector"]:
+                del st.session_state[key]
         st.session_state["fitting_pose_selected"] = index
-    # reset garment selector
+        
 def show_viewpoint():
     viewpoint = st.radio("Viewpoint", [0,45,90,135,180,225,270,315], index=0, horizontal=True)
     if "viewpoint" not in st.session_state or st.session_state["viewpoint"] != viewpoint:
         st.session_state["viewpoint"] = viewpoint
-        if "fitting_pose_selector" in st.session_state:
-            del st.session_state["fitting_pose_selector"]
-        if "fitting_pose_selected" in st.session_state:
-            del st.session_state["fitting_pose_selected"]
-        if "fitting_top_selector" in st.session_state:
-            del st.session_state["fitting_top_selector"]
-        if "fitting_bottom_selector" in st.session_state:
-            del st.session_state["fitting_bottom_selector"]
+
 
 def get_avatar_image():
-    avatar_id = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["id"]
-    pose_id = st.session_state["fitting_poses"][st.session_state["fitting_pose_selected"]]["id"]
-    avatar = asyncio.run(search_avatar_func(avatar_id=avatar_id, pose_id = pose_id))["searchAvatars"][0]
-    viewpoint = st.session_state["viewpoint"]
-    avatar_image = common.read_image_from_url(avatar["objects"]["d"+str(viewpoint)])
-    avatar_shadow = common.read_image_from_url(avatar["shadows"]["d"+str(viewpoint)])
-    return avatar_image, avatar_shadow
+    try:
+        avatar_id = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["id"]
+        pose_id = st.session_state["fitting_poses"][st.session_state["fitting_pose_selected"]]["id"]
+        avatar = asyncio.run(search_avatar_func(avatar_id=avatar_id, pose_id = pose_id))["searchAvatars"][0]
+        viewpoint = st.session_state["viewpoint"]
+        avatar_image = common.read_image_from_url(avatar["objects"]["d"+str(viewpoint)])
+        avatar_shadow = common.read_image_from_url(avatar["shadows"]["d"+str(viewpoint)])
+        return avatar_image, avatar_shadow
+    except Exception as e:
+        return None, None
 
 def __show_garment(fitting_selector_key:str, fitting_selected_key:str, garment_type:str):
     # Get avtar id and pose id selected from session state
@@ -270,7 +265,7 @@ def __show_garment(fitting_selector_key:str, fitting_selected_key:str, garment_t
         div_style = {"display": "flex", "flex-direction":"row","overflow-x": "scroll", "width": "500px"},
         img_style = {"margin": "10px", "height": "100px", "border":"5px solid" },
         border_color="red",
-        key=garment_type,
+        key=f"{avatar_pose}_{garment_type}",
         ) 
     index = st.session_state[fitting_selector_key].click_detect()
     if index == -1:
@@ -279,27 +274,29 @@ def __show_garment(fitting_selector_key:str, fitting_selected_key:str, garment_t
     elif fitting_selected_key not in st.session_state or st.session_state[fitting_selected_key] != index:
         st.session_state[fitting_selected_key] = index
 def __get_garment(fitting_selected_key:str, garment_type:str):
-    # Get avtar id and pose id selected from session state
-    avatar_id = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["id"]
-    pose_id = st.session_state["fitting_poses"][st.session_state["fitting_pose_selected"]]["id"]
-    
-    avatar_pose = f"{avatar_id}_{pose_id}"
-    
-    # get top selected
-    if  fitting_selected_key not in st.session_state:
+    try:
+        # Get avtar id and pose id selected from session state
+        avatar_id = st.session_state["fitting_avatars"][st.session_state["fitting_avatar_selected"]]["id"]
+        pose_id = st.session_state["fitting_poses"][st.session_state["fitting_pose_selected"]]["id"]
+        
+        avatar_pose = f"{avatar_id}_{pose_id}"
+        
+        # get top selected
+        if  fitting_selected_key not in st.session_state:
+            return None, None
+        
+        index = st.session_state[fitting_selected_key]
+        selected_top = st.session_state["search_garment"][avatar_pose][garment_type][index]
+        images = selected_top["objects"]
+        shadows = selected_top["shadows"]
+        viewpoint = st.session_state["viewpoint"]
+        viewpoint = f"d{viewpoint}"
+        
+        image= common.read_image_from_url(images[viewpoint])
+        shadow= common.read_image_from_url(shadows[viewpoint])
+        return image, shadow
+    except Exception as e:
         return None, None
-    
-    index = st.session_state[fitting_selected_key]
-    selected_top = st.session_state["search_garment"][avatar_pose][garment_type][index]
-    images = selected_top["objects"]
-    shadows = selected_top["shadows"]
-    viewpoint = st.session_state["viewpoint"]
-    viewpoint = f"d{viewpoint}"
-    # image = asyncio.run(common.read_image_from_url_async(images[viewpoint]))
-    # shadow = asyncio.run(common.read_image_from_url_async(shadows[viewpoint]))
-    image= common.read_image_from_url(images[viewpoint])
-    shadow= common.read_image_from_url(shadows[viewpoint])
-    return image, shadow
     
 def show_top():
     __show_garment("fitting_top_selector", "fitting_top_selected", "top")
