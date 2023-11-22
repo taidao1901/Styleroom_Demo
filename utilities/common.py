@@ -1,11 +1,11 @@
 import requests
-import asyncio
 from urllib.parse import urlparse
 import base64
 import os
 from PIL import Image
 import streamlit as st
-
+import aiohttp
+import io
 async def upload_file_signed_url(file, url:str, 
                                  headers:dict ={'Content-Type': 'application/octet-stream'}):
     try:
@@ -59,6 +59,21 @@ def read_image_from_url(url:str):
     try:
         image = Image.open(requests.get(url, stream = True).raw)
         return image
+    except Exception as e:
+        print(e)
+        return None
+@st.cache_resource(ttl=3600)
+async def read_image_from_url_async(url: str):
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    image_bytes = await response.read()
+                    image = Image.open(io.BytesIO(image_bytes))
+                    return image
+                else:
+                    print(f"Failed to fetch image: {response.status}")
+                    return None
     except Exception as e:
         print(e)
         return None
