@@ -15,6 +15,8 @@ def main():
     top_image, top_shadow = None, None
     bottom_image, bottom_shadow = None, None
     shoes_image, shawdow_image = None, None
+    if "viewpoint" not in st.session_state:
+        st.session_state["viewpoint"]=0
     components.list_avatar()
     # print("avatar", st.session_state["fitting_avatars"])
     with left:
@@ -27,8 +29,8 @@ def main():
         components.show_top()
         components.show_bottom()
     with mid:
-        components.show_viewpoint()
-        start = time.time()
+        # start = time.time()
+        # components.show_viewpoint()
         if "viewpoint" not in st.session_state or "fitting_avatar_selected" not in st.session_state or "fitting_pose_selected" not in st.session_state:
             new_image = Image.new("RGBA", (1280 , 1976), color="red")
             components.show_image(new_image)
@@ -37,7 +39,7 @@ def main():
         bottom_image, bottom_shadow = components.get_bottom_image()
         if avatar_image is not None and avatar_shadow is not None:
             components.show_image(avatar_image, avatar_shadow, shoes_image, shawdow_image, bottom_image, bottom_shadow, top_image, top_shadow)
-            st.write("Time taken to render: ", time.time() - start)
+            # st.write("Time taken to render: ", time.time() - start)
 
 if __name__ == "__main__":
     main()
