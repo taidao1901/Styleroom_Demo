@@ -252,10 +252,11 @@ def __show_garment(fitting_selector_key:str, fitting_selected_key:str, garment_t
     avatar_pose = f"{avatar_id}_{pose_id}"
     if "search_garment" not in st.session_state or avatar_pose not in st.session_state["search_garment"]:
         search_garment(avatar_id, pose_id, is_activate=True)
-    
-    garments = st.session_state["search_garment"][avatar_pose][garment_type]  
-    thumbnails = [garment["thumbnail"] for garment in garments]
-    
+    try:
+        garments = st.session_state["search_garment"][avatar_pose][garment_type]  
+        thumbnails = [garment["thumbnail"] for garment in garments]
+    except:
+        thumbnails = []
     image_names = []
     if fitting_selector_key not in st.session_state:
         st.session_state[fitting_selector_key] = ImageSelector(
@@ -297,14 +298,30 @@ def __get_garment(fitting_selected_key:str, garment_type:str):
         return image, shadow
     except Exception as e:
         return None, None
-    
+
+
+def show_hair():
+    __show_garment("fitting_hair_selector", "fitting_hair_selected", "hair")
+def get_hair_image():
+    return __get_garment("fitting_hair_selected", "hair")
+ 
 def show_top():
     __show_garment("fitting_top_selector", "fitting_top_selected", "top")
 def get_top_image():
     return __get_garment("fitting_top_selected", "top")
-
-
+def show_accessory():
+    __show_garment("fitting_accessories_selector", "fitting_accessories_selected", "accessory")
+def get_accessory_image():
+    return __get_garment("fitting_accessories_selected", "accessory")
 def show_bottom():
     __show_garment("fitting_bottom_selector", "fitting_bottom_selected", "bottom")
 def get_bottom_image():
     return __get_garment("fitting_bottom_selected", "bottom")
+def show_shoes():
+    __show_garment("fitting_shoes_selector", "fitting_shoes_selected", "shoes")
+def get_shoes_image():
+    return __get_garment("fitting_shoes_selected", "shoes")
+def show_whole_body():
+    __show_garment("fitting_whole_body_selector", "fitting_whole_body_selected", "wholeBody")
+def get_whole_body_image():
+    return __get_garment("fitting_whole_body_selected", "wholeBody")
