@@ -26,8 +26,12 @@ def main():
         with pose:
             components.show_pose()
     with right:
+        components.show_hair()
         components.show_top()
+        components.show_accessory()
         components.show_bottom()
+        components.show_shoes()
+        components.show_whole_body()
     with mid:
         # start = time.time()
         # components.show_viewpoint()
@@ -35,10 +39,16 @@ def main():
             new_image = Image.new("RGBA", (1280 , 1976))
             components.show_image(new_image)
         avatar_image, avatar_shadow = components.get_avatar_image()
+        hair_image, hair_shadow = components.get_hair_image()
         top_image, top_shadow = components.get_top_image()
+        accessory_image, accessory_shadow = components.get_accessory_image()
+        
         bottom_image, bottom_shadow = components.get_bottom_image()
+        shoes_image, shoes_shadow = components.get_shoes_image()
+        whole_body_image, whole_body_shadow = components.get_whole_body_image()
         if avatar_image is not None and avatar_shadow is not None:
-            components.show_image(avatar_image, avatar_shadow, shoes_image, shawdow_image, bottom_image, bottom_shadow, top_image, top_shadow)
+            components.show_image(avatar_image, avatar_shadow, shoes_image, shoes_shadow, bottom_image, bottom_shadow, top_image, top_shadow, accessory_image, accessory_shadow, hair_image, hair_shadow, whole_body_image, whole_body_shadow)
             # st.write("Time taken to render: ", time.time() - start)
 if __name__ == "__main__":
+    
     main()

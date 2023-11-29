@@ -87,7 +87,7 @@ def create_garment():
         st.title("Create a new garment")
         pose_id = st.text_input("Pose ID")
         avatar_id = st.text_input("Avatar ID")
-        type = st.text_input("Type")
+        type = st.selectbox("Type", ["accessory", "hair","top","bottom","shoes","wholeBody"])
         sbox_post_id = st.text_input("Sbox Post ID")
         file = st.file_uploader("Upload GLB file", type="glb")
         submit = st.form_submit_button(label="submit")
