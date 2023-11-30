@@ -11,6 +11,7 @@ from utilities.fitting.clickable_image import ImageSelector
 from dotenv import load_dotenv
 import asyncio
 import gc
+import pprint
 load_dotenv()
 
 def show_image(*args):
@@ -154,7 +155,9 @@ def search_garment(avatar_id: int, pose_id: int, is_activate: bool):
             st.session_state["search_garment"][avatar_pose]["bottom"] = [garment for garment in garments if garment["type"] == "bottom"]
             st.session_state["search_garment"][avatar_pose]["shoes"] = [garment for garment in garments if garment["type"] == "shoes"]
             st.session_state["search_garment"][avatar_pose]["hair"] = [garment for garment in garments if garment["type"] == "hair"]
-            st.session_state["search_garment"][avatar_pose]["accessories"] = [garment for garment in garments if garment["type"] == "accessories"]
+            st.session_state["search_garment"][avatar_pose]["accessory"] = [garment for garment in garments if garment["type"] == "accessory"]
+            st.session_state["search_garment"][avatar_pose]["wholeBody"] = [garment for garment in garments if garment["type"] == "wholeBody"]
+            
     except Exception as e:
         st.error(e)
         
@@ -256,6 +259,7 @@ def __show_garment(fitting_selector_key:str, fitting_selected_key:str, garment_t
         garments = st.session_state["search_garment"][avatar_pose][garment_type]  
         thumbnails = [garment["thumbnail"] for garment in garments]
     except:
+        print(f"Cannot find {avatar_pose}|{garment_type}")
         thumbnails = []
     image_names = []
     if fitting_selector_key not in st.session_state:
